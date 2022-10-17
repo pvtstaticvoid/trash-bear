@@ -39,6 +39,8 @@ class Board extends React.Component {
                     )
                 })}
                 <button onClick={() => {this.props.onStart(0, 0)}}>Start!</button>
+                <button onClick={() => {this.props.onReset()}}>Reset</button>
+                <button onClick={() => {this.props.onPrev()}}>Show prev path</button>
             </div>
         );
     }
@@ -47,22 +49,25 @@ class Board extends React.Component {
 class Game extends React.Component {
     constructor(props) {
         super(props);
-        const squares = Array(100).fill(null);
-        const distances = Array(100).fill(2);
         // squares[0] = "X";
         // squares[99] = "X";
         this.state = {
-            squares: squares
+            squares: Array(100).fill(null),
+            prevArr: Array(100).fill(null),
         };
     }
 
     getDistances() {
         const distances = Array(100).fill(null);
-        this.prop(0, 0, 0, distances)
-        this.setState({squares: distances});
+        const prevArr = Array(100).fill(null);
+        this.prop(0, 0, 0, distances, prevArr, null)
+        this.setState({
+            squares: distances,
+            prevArr: prevArr,
+        });
     }
 
-    prop(i, j, d, distances) {
+    prop(i, j, d, distances, prevArr, prevIdx) {
 
         const idx = i*10 + j;
         if (i < 0 || i >= 10 || j < 0 || j >= 10) {
@@ -77,11 +82,32 @@ class Game extends React.Component {
         }
         
         distances[idx] = d;
+        let arrow;
 
-        this.prop(i + 1, j, d + 1, distances);
-        this.prop(i - 1, j, d + 1, distances);
-        this.prop(i, j + 1, d + 1, distances);
-        this.prop(i, j - 1, d + 1, distances);
+        switch(idx) {
+            case prevIdx + 1:
+                arrow = "→"
+                break;
+            case prevIdx - 1:
+                arrow = "←"
+                break;
+            case prevIdx + 10:
+                arrow = "↓"
+                break;
+            case prevIdx - 10:
+                arrow = "↑"
+                break;
+            default:
+                arrow = "?"
+                break;
+        }
+
+        prevArr[idx] = arrow
+
+        this.prop(i + 1, j, d + 1, distances, prevArr, idx);
+        this.prop(i - 1, j, d + 1, distances, prevArr, idx);
+        this.prop(i, j + 1, d + 1, distances, prevArr, idx);
+        this.prop(i, j - 1, d + 1, distances, prevArr, idx);
     }
 
     handleClick(i) {
@@ -110,6 +136,12 @@ class Game extends React.Component {
                         onStart={(i, j) => {
                             this.getDistances();
                             // this.setState({squares: this.distances});
+                        }}
+                        onReset={() => {
+                            this.setState({squares: Array(100).fill(null)});
+                        }}
+                        onPrev={() => {
+                            this.setState((state, props) => ({squares: state.prevArr}));
                         }}
                     />
                 </div>
