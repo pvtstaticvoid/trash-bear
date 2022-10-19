@@ -82,32 +82,29 @@ class Game extends React.Component {
         }
         
         distances[idx] = d;
-        let arrow;
-
-        switch(idx) {
-            case prevIdx + 1:
-                arrow = "→"
-                break;
-            case prevIdx - 1:
-                arrow = "←"
-                break;
-            case prevIdx + 10:
-                arrow = "↓"
-                break;
-            case prevIdx - 10:
-                arrow = "↑"
-                break;
-            default:
-                arrow = "?"
-                break;
-        }
-
-        prevArr[idx] = arrow
+        prevArr[idx] = prevIdx
 
         this.prop(i + 1, j, d + 1, distances, prevArr, idx);
         this.prop(i - 1, j, d + 1, distances, prevArr, idx);
         this.prop(i, j + 1, d + 1, distances, prevArr, idx);
         this.prop(i, j - 1, d + 1, distances, prevArr, idx);
+    }
+
+    getShortedPath() {
+        this.setState(function(state, props) {
+            
+            const ret = Array(100).fill(null);
+
+            let curr_idx = 99;
+            while (curr_idx != null) {
+                ret[curr_idx] = "X";
+                curr_idx = state.prevArr[curr_idx];
+            }
+            
+            return {
+                squares: ret
+            };
+        });
     }
 
     handleClick(i) {
@@ -141,7 +138,7 @@ class Game extends React.Component {
                             this.setState({squares: Array(100).fill(null)});
                         }}
                         onPrev={() => {
-                            this.setState((state, props) => ({squares: state.prevArr}));
+                            this.getShortedPath();
                         }}
                     />
                 </div>
