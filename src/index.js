@@ -4,6 +4,10 @@ import './index.css';
 
 // ========================================
 
+const GRID_SIZE = 6;
+
+// ========================================
+
 function Square(props) {
     return (
         <button className="square" onClick={props.onClick}>
@@ -17,30 +21,33 @@ class Board extends React.Component {
     renderSquare(i) {
         return (
             <Square
-                value={this.props.squares[i]}
+                value={this.props.grid[i]}
                 onClick={() => this.props.onClick(i)}
             />
         );
     }
 
     render() {
-        const idxs = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        const idxs = [...Array(GRID_SIZE).keys()];
         return (
             <div>
                 {idxs.map((i) => {
                     return (
                         <div className="board-row">
                             {idxs.map((j) => {
+                                const idx = i*GRID_SIZE + j
                                 return (
-                                    this.renderSquare(i*10 + j)
+                                    this.renderSquare(idx)
                                 );
                             })}
                         </div>
                     )
                 })}
-                <button onClick={() => {this.props.onStart(0, 0)}}>Start!</button>
+                <button onClick={() => {
+                    this.props.onStart(0, 0);
+                    this.props.onPrev();
+                }}>Find Shortest Path</button>
                 <button onClick={() => {this.props.onReset()}}>Reset</button>
-                <button onClick={() => {this.props.onPrev()}}>Show prev path</button>
             </div>
         );
     }
@@ -49,36 +56,30 @@ class Board extends React.Component {
 class Game extends React.Component {
     constructor(props) {
         super(props);
-        // squares[0] = "X";
-        // squares[99] = "X";
         this.state = {
-            squares: Array(100).fill(null),
-            prevArr: Array(100).fill(null),
+            grid: Array(GRID_SIZE**2).fill(null),
+            prevArr: Array(GRID_SIZE**2).fill(null),
         };
     }
 
     getDistances() {
-        const distances = Array(100).fill(null);
-        const prevArr = Array(100).fill(null);
+        const distances = Array(GRID_SIZE**2).fill(null);
+        const prevArr = Array(GRID_SIZE**2).fill(null);
         this.prop(0, 0, 0, distances, prevArr, null)
         this.setState({
-            squares: distances,
+            grid: distances,
             prevArr: prevArr,
         });
     }
 
     prop(i, j, d, distances, prevArr, prevIdx) {
 
-        const idx = i*10 + j;
-        if (i < 0 || i >= 10 || j < 0 || j >= 10) {
+        const idx = i*GRID_SIZE + j;
+        if (i < 0 || i >= GRID_SIZE || j < 0 || j >= GRID_SIZE) {
             return;
         }
-        if ((distances[idx] != null && distances[idx] <= d) || this.state.squares[idx] === "W") {
+        if ((distances[idx] != null && distances[idx] <= d) || this.state.grid[idx] === "W") {
             return;
-        }
-
-        if (idx === 0) {
-            console.log({idx}, {d}, distances[idx]);
         }
         
         distances[idx] = d;
@@ -93,25 +94,25 @@ class Game extends React.Component {
     getShortedPath() {
         this.setState(function(state, props) {
             
-            const ret = Array(100).fill(null);
+            const ret = Array(GRID_SIZE**2).fill(null);
 
-            let curr_idx = 99;
+            let curr_idx = GRID_SIZE**2 - 1;
             while (curr_idx != null) {
                 ret[curr_idx] = "X";
                 curr_idx = state.prevArr[curr_idx];
             }
             
             return {
-                squares: ret
+                grid: ret
             };
         });
     }
 
     handleClick(i) {
-        const squares = this.state.squares.slice();
-        squares[i] = this.state.xIsNext ? "X" : "W";
+        const grid = this.state.grid.slice();
+        grid[i] = this.state.xIsNext ? "X" : "W";
         this.setState({
-            squares: squares
+            grid: grid
         });
     }
 
@@ -128,14 +129,15 @@ class Game extends React.Component {
             <div className="game">
                 <div className="game-board">
                     <Board
-                        squares={this.state.squares}
+                        n = {GRID_SIZE}
+                        grid={this.state.grid}
                         onClick={i => this.handleClick(i)}
                         onStart={(i, j) => {
                             this.getDistances();
-                            // this.setState({squares: this.distances});
+                            // this.setState({grid: this.distances});
                         }}
                         onReset={() => {
-                            this.setState({squares: Array(100).fill(null)});
+                            this.setState({grid: Array(GRID_SIZE**2).fill(null)});
                         }}
                         onPrev={() => {
                             this.getShortedPath();
