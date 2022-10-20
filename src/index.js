@@ -35,7 +35,7 @@ class Board extends React.Component {
                     return (
                         <div className="board-row">
                             {idxs.map((j) => {
-                                const idx = i*GRID_SIZE + j
+                                const idx = i * GRID_SIZE + j
                                 return (
                                     this.renderSquare(idx)
                                 );
@@ -43,69 +43,57 @@ class Board extends React.Component {
                         </div>
                     )
                 })}
-                <button onClick={() => {
-                    this.props.onStart(0, 0);
-                    this.props.onPrev();
-                }}>Find Shortest Path</button>
-                <button onClick={() => {this.props.onReset()}}>Reset</button>
+                <button onClick={() => { this.props.onSearch(); }}>Search</button>
+                <button onClick={() => { this.props.onReset(); }}>Reset</button>
             </div>
         );
     }
 }
 
 class Game extends React.Component {
+
     constructor(props) {
         super(props);
         this.state = {
-            grid: Array(GRID_SIZE**2).fill(null),
-            prevArr: Array(GRID_SIZE**2).fill(null),
+            grid: Array(GRID_SIZE ** 2).fill(null),
         };
     }
 
-    getDistances() {
-        const distances = Array(GRID_SIZE**2).fill(null);
-        const prevArr = Array(GRID_SIZE**2).fill(null);
-        this.prop(0, 0, 0, distances, prevArr, null)
-        this.setState({
-            grid: distances,
-            prevArr: prevArr,
+    DFS() {
+        this.setState(function (state, _) {
+
+            const distArr = Array(GRID_SIZE ** 2).fill(null);
+            const prevArr = Array(GRID_SIZE ** 2).fill(null);
+            this.visit(state, 0, 0, 0, distArr, prevArr, null);
+
+            const shortestPath = Array(GRID_SIZE ** 2).fill(null);
+            let curr_idx = GRID_SIZE ** 2 - 1;
+            while (curr_idx != null) {
+                shortestPath[curr_idx] = "X";
+                curr_idx = prevArr[curr_idx];
+            }
+
+            return ({
+                grid: shortestPath,
+            });
         });
     }
 
-    prop(i, j, d, distances, prevArr, prevIdx) {
+    visit(state, i, j, d, distArr, prevArr, prevIdx) {
 
-        const idx = i*GRID_SIZE + j;
-        if (i < 0 || i >= GRID_SIZE || j < 0 || j >= GRID_SIZE) {
-            return;
-        }
-        if ((distances[idx] != null && distances[idx] <= d) || this.state.grid[idx] === "W") {
-            return;
-        }
-        
-        distances[idx] = d;
+        const idx = i * GRID_SIZE + j;
+
+        if (i < 0 || i >= GRID_SIZE || j < 0 || j >= GRID_SIZE) { return; }
+        if (state.grid[idx] === "W") { return; }
+        if ((distArr[idx] != null && distArr[idx] <= d)) { return; }
+
+        distArr[idx] = d;
         prevArr[idx] = prevIdx
 
-        this.prop(i + 1, j, d + 1, distances, prevArr, idx);
-        this.prop(i - 1, j, d + 1, distances, prevArr, idx);
-        this.prop(i, j + 1, d + 1, distances, prevArr, idx);
-        this.prop(i, j - 1, d + 1, distances, prevArr, idx);
-    }
-
-    getShortedPath() {
-        this.setState(function(state, props) {
-            
-            const ret = Array(GRID_SIZE**2).fill(null);
-
-            let curr_idx = GRID_SIZE**2 - 1;
-            while (curr_idx != null) {
-                ret[curr_idx] = "X";
-                curr_idx = state.prevArr[curr_idx];
-            }
-            
-            return {
-                grid: ret
-            };
-        });
+        this.visit(state, i + 1, j, d + 1, distArr, prevArr, idx);
+        this.visit(state, i - 1, j, d + 1, distArr, prevArr, idx);
+        this.visit(state, i, j + 1, d + 1, distArr, prevArr, idx);
+        this.visit(state, i, j - 1, d + 1, distArr, prevArr, idx);
     }
 
     handleClick(i) {
@@ -117,45 +105,26 @@ class Game extends React.Component {
     }
 
     render() {
-
-        // let status;
-        // if (winner) {
-        //     status = "Winner: " + winner;
-        // } else {
-        //     status = "Next player: " + (this.state.xIsNext ? "X" : "O");
-        // }
-
         return (
             <div className="game">
                 <div className="game-board">
                     <Board
-                        n = {GRID_SIZE}
                         grid={this.state.grid}
                         onClick={i => this.handleClick(i)}
-                        onStart={(i, j) => {
-                            this.getDistances();
-                            // this.setState({grid: this.distances});
+                        onSearch={() => {
+                            this.DFS();
                         }}
                         onReset={() => {
-                            this.setState({grid: Array(GRID_SIZE**2).fill(null)});
-                        }}
-                        onPrev={() => {
-                            this.getShortedPath();
+                            this.setState({
+                                grid: Array(GRID_SIZE ** 2).fill(null),
+                            });
                         }}
                     />
-                </div>
-                <div className="game-info">
-                    {/* <div>{status}</div> */}
-                    {/* <ol>{moves}</ol> */}
                 </div>
             </div>
         );
     }
 }
-
-
-
-
 
 // ========================================
 
